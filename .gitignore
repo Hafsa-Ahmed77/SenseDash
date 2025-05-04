@@ -1,0 +1,27 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore Arduino temporary files
+*.hex
+*.elf
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore Node modules (if using React or similar)
+node_modules/
+
+# Ignore environment files
+.env
+
+# Ignore log files
+*.log
+
+# Ignore build/output
+dist/
+build/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/128/10397/10397255.png" type="image/png">
+    <title>SenseDash</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f1c2c, #2b3a42);
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .glass {
+      position: relative;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      padding: 2rem;
+      color: white;
+      transition: transform 0.3s ease;
+    }
+    .glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  box-shadow: 0 0 12px rgba(255,110,196,0.6), 0 0 24px rgba(120,115,245,0.5);
+  pointer-events: none;
+  padding: 2px;
+  background: linear-gradient(45deg, #e4a8ca, #a586c1, #a9cbe3, #ebabcf);
+  background-size: 300% 300%;
+  animation: borderAnim 6s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+          mask-composite: exclude;
+}
+
+@keyframes borderAnim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+    .glass:hover {
+      transform: scale(1.01);
+    }
+
+    .glow {
+      color: #ff5252;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { text-shadow: 0 0 5px #ff5252; }
+      50% { text-shadow: 0 0 20px #ff5252; }
+      100% { text-shadow: 0 0 5px #ff5252; }
+    }
+
+    .navbar {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .unit-glow {
+  font-size: 2rem;
+  color: white;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+#toastContainer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  background: rgba(36, 32, 35, 0.333);
+  color: white;
+  font-size: 1.5rem; /* Increased font size */
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  /* box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); */
+  min-width: 320px;
+  max-width: 90vw;
+  justify-content: space-between;
+  animation: fadeInOut 5s ease forwards;
+}
+
+.toast-icon {
+  margin-right: 1rem;
+  font-size: 2rem;
+}
+
+.toast button {
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+  </style>
+</head>
+<body class="text-white">
+
+  <!-- Navbar -->
+  <nav class="navbar flex justify-between items-center px-6 py-4 text-white sticky top-0 z-50">
+    <h1 class="text-2xl font-bold">SenseDash</h1>
+    <button class="transition-btn" onclick="zoomTransition()">Go to HomePage</button>
+
+  </nav>
+
+  <main class="max-w-5xl mx-auto mt-10 space-y-10">
+    <!-- Live Data Glass -->
+    <div class="glass grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+      <div>
+        <p class="text-xl font-bold">🌡 Temperature</p>
+        <p class="text-3xl font-bold mt-2 transition-all duration-300">
+          <span id="live-temp">--</span> <span class="unit-glow">°C</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-xl font-bold">💧 Humidity</p>
+        <p class="text-3xl font-bold mt-2 transition-all duration-300">
+          <span id="live-humidity">--</span> <span class="unit-glow">%</span>
+        </p>
+      </div>
+      <div>
+        <p class="text-xl font-bold">🕒 Time</p>
+        <p id="live-time" class="text-xl mt-2">--</p>
+      </div>
+    </div>
+<!-- Real-Time Gauges -->
+<div class="glass grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+  <div>
+    <p class="text-2xl font-bold mb-2">🌡 Temp Gauge</p>
+    <canvas id="tempGauge" width="200" height="200"></canvas>
+
+  </div>
+  <div>
+    <p class="text-2xl font-bold mb-2">💧 Humidity Gauge</p>
+    <canvas id="humidityGauge" width="200" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Last Update Status -->
+<div class="text-center text-sm mt-6">
+  <p id="statusMsg" class="text-gray-300">🔄 Waiting for data...</p>
+</div>
+
+    <!-- Chart Glass -->
+    <div class="glass">
+      <p class="text-2xl font-bold mb-4 text-center">📊 Data History</p>
+      <div id="buttonContainer" class="flex flex-wrap justify-center gap-4 mb-4">
+        <button class="filter-button bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded" data-range="live">Live</button>
+        <button class="filter-button bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded" data-range="6h">6 hr</button>
+        <button class="filter-button bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded" data-range="12h">12 hr</button>
+        <button class="filter-button bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded" data-range="18h">18 hr</button>
+        <button class="filter-button bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded" data-range="1d">1 Day</button>
+      </div>
+      <div id="chartWrapper" class="hidden">
+        <canvas id="sensorChart" height="100"></canvas>
+      </div>
+    </div>
+    
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <!-- Toast Notification Container -->
+<div id="toastContainer"></div>
+<script>
+  function zoomTransition() {
+    // Zoom out and fade out the current page
+    gsap.to("body", { scale: 0.5, opacity: 0, duration: 1, ease: "power2.inOut" });
+
+    // After the zoom out, transition to the new page
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1000); // Ensure this matches the animation duration
+  }
+</script>
+
+</body>
+</html>
